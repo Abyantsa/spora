@@ -231,4 +231,17 @@ CREATE POLICY "Users can manage own schedules" ON user_schedules FOR ALL USING (
 CREATE POLICY "Users can view own passport" ON sport_passport FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can update own passport" ON sport_passport FOR ALL USING (auth.uid() = user_id);
 
+-- ====================================================================
+-- 8. INITIAL SEED DATA (Data Awal Lapangan / Venue Surabaya)
+-- ====================================================================
+INSERT INTO venues (n, e, category, sports, dist, rate, owner, note, taken) VALUES
+('Lapangan Perpustakaan ITS', '🏀', 'non-komersial', 'Basket, Voli', '650 m', 0, 'Ditmawa ITS', 'Fasilitas kampus, bebas biaya untuk mahasiswa ITS.', ARRAY['15.00','17.00']),
+('GOR Graha Sepuluh Nopember', '🏸', 'non-komersial', 'Badminton, Voli', '400 m', 60000, 'Ditmawa ITS', '4 lapangan badminton, tersedia raket sewa.', ARRAY['19.00','21.00']),
+('Lapangan Teknik Sipil ITS', '⚽', 'non-komersial', 'Futsal', '800 m', 0, 'Departemen Teknik Sipil', 'Lapangan outdoor, perlu izin himpunan di luar jam kuliah.', ARRAY['17.00']),
+('GOR Kelurahan Keputih', '🏐', 'non-komersial', 'Voli, Bulutangkis', '900 m', 40000, 'Karang Taruna Keputih', 'Dikelola warga, pembayaran tunai di lokasi.', ARRAY['08.00','19.00']),
+('Taman Harmoni Keputih', '🏃', 'publik', 'Lari, Senam', '1,2 km', 0, 'Pemkot Surabaya', 'Ruang publik, tidak perlu pemesanan.', ARRAY[]::TEXT[]),
+('Champion Futsal Mulyosari', '⚽', 'komersial', 'Futsal', '1,8 km', 120000, 'Champion Sport', 'Rumput sintetis, tersedia ruang ganti.', ARRAY['19.00','21.00']),
+('Surabaya Padel Kertajaya', '🎾', 'komersial', 'Padel', '3,4 km', 180000, 'SBY Padel', '2 lapangan indoor, sewa raket Rp25.000.', ARRAY['06.00','08.00','17.00'])
+ON CONFLICT DO NOTHING;
+
 

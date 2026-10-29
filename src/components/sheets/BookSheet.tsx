@@ -4,12 +4,20 @@ import { useAppStore, SPORTS, DAYS, SLOTS } from '@/lib/store';
 import { rp, endTime } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
+function generateBookingCode() {
+  return 'SPR-' + Math.floor(1000 + Math.random() * 9000);
+}
+
+function generateSessionId() {
+  return 'b' + Date.now();
+}
+
 export default function BookSheet({ id }: { id: string }) {
   const { state, addBooking, addSession, closeSheet, showToast } = useAppStore();
   const router = useRouter();
 
   const v = state.venues.find(x => x.id === id);
-  const [b, setB] = useState({ day: 'Selasa', time: '', dur: 1, asSession: false });
+  const [b, setB] = useState({ day: 'Selasa', time: '15.00', dur: 1, asSession: false });
 
   if (!v) return null;
 
@@ -17,7 +25,7 @@ export default function BookSheet({ id }: { id: string }) {
   const ready = !!b.time;
 
   const submit = () => {
-    const code = 'SPR-' + Math.floor(1000 + Math.random() * 9000);
+    const code = generateBookingCode();
     const end = endTime(b.time, b.dur);
     
     addBooking({
@@ -25,7 +33,7 @@ export default function BookSheet({ id }: { id: string }) {
     });
 
     if (b.asSession) {
-      const sessionId = 'b' + Date.now();
+      const sessionId = generateSessionId();
       const sportName = v.sports.split(',')[0].trim();
       const sp = SPORTS.find(x => x.n === sportName) || { e: v.e };
       const min = 6;
@@ -40,91 +48,153 @@ export default function BookSheet({ id }: { id: string }) {
     closeSheet();
     router.push('/mine');
     
-    if (b.asSession) {
-      showToast('Venue disewa dan sesi terbuka dibuat. Pemain lain bisa ikut patungan.');
-    } else {
-      showToast(total === 0 ? 'Fasilitas dipesan. Tidak ada biaya.' : `Venue disewa — ${rp(total)}. Kode pemesanan dikirim.`);
-    }
+    showToast(b.asSession
+      ? `Venue ${v.n} dipesan & sesi matchmaking terbuka berhasil dibuat!`
+      : `Pemesanan ${v.n} sukses! Kode: ${code}`);
   };
 
   return (
-    <>
-      <div className="bg-court text-white p-[18px] lg:p-[20px] rounded-[20px_20px_0_0] lg:rounded-[18px_18px_0_0] relative">
-        <button className="absolute right-[14px] top-[14px] bg-white/16 border-0 text-white w-[26px] h-[26px] rounded-full text-[15px] cursor-pointer leading-[1]" onClick={closeSheet}>✕</button>
-        <h3 className="text-[21px] font-extrabold tracking-[-.025em]">{v.e} {v.n}</h3>
-        <p className="text-[13px] text-white/75 mt-[5px] leading-[1.5]">{v.sports} · {v.dist} · dikelola {v.owner}</p>
+    <div className="flex flex-col">
+      {/* Top Header */}
+      <div className="p-4 sm:p-5 border-b border-[#e7e7e7] relative">
+        <button 
+          onClick={closeSheet} 
+          aria-label="Tutup"
+          className="absolute right-4 top-4 w-8 h-8 rounded-full bg-[#edebe9] hover:bg-[#d6dbde] text-[rgba(0,0,0,0.87)] grid place-items-center cursor-pointer transition-all border-0 text-[15px]"
+        >
+          ✕
+        </button>
+        <h3 className="text-[20px] sm:text-[22px] font-bold text-[#006241] pr-9 leading-tight">
+          {v.e} {v.n}
+        </h3>
+        <p className="text-[12.5px] text-[rgba(0,0,0,0.58)] mt-1 leading-normal">
+          {v.sports} · {v.dist} · Dikelola oleh {v.owner}
+        </p>
       </div>
-      
-      <div className="p-[16px_14px_20px] lg:p-[20px] flex flex-col gap-[14px]">
-        <div className="bg-card border border-line rounded-radius p-[13px]">
-          <div className="flex justify-between items-center text-[13.5px] py-[7px] gap-[12px]">
-            <span className="text-muted">Tarif</span><b className="font-bold text-right">{v.rate === 0 ? 'Gratis' : rp(v.rate) + ' / jam'}</b>
+
+      <div className="p-4 sm:p-6 flex flex-col gap-4">
+        {/* Cost Info Card */}
+        <div className="bg-[#edebe9] rounded-[14px] p-4 border border-[#d6dbde] flex flex-col gap-1.5">
+          <div className="flex justify-between items-center text-[13.5px]">
+            <span className="text-[rgba(0,0,0,0.58)]">Tarif Sewa:</span>
+            <b className="font-bold">{v.rate === 0 ? 'Gratis / Bebas Biaya' : `${rp(v.rate)} / jam`}</b>
           </div>
-          <div className="flex justify-between items-center text-[13.5px] py-[7px] gap-[12px] border-t border-line">
-            <span className="text-muted">Keterangan</span><b className="font-medium text-muted text-right text-[12.5px]">{v.note}</b>
+          <div className="flex justify-between items-center text-[13px] pt-1 border-t border-[#d6dbde]">
+            <span className="text-[rgba(0,0,0,0.58)]">Ketentuan:</span>
+            <span className="text-[rgba(0,0,0,0.87)] text-right font-medium max-w-[70%]">{v.note}</span>
           </div>
         </div>
 
-        <div>
-          <label className="block text-[12.5px] font-bold mb-[6px]">Hari</label>
-          <select className="w-full bg-card border border-line rounded-[10px] p-[11px_12px] text-[14px] focus:outline-court focus:outline-2 focus:-outline-offset-1" value={b.day} onChange={e => setB(p => ({ ...p, day: e.target.value }))}>
+        {/* Day */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">Pilih Hari</label>
+          <select 
+            className="w-full bg-white border border-[#d6dbde] rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#00754A]" 
+            value={b.day} 
+            onChange={e => setB(prev => ({ ...prev, day: e.target.value }))}
+          >
             {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
 
-        <div>
-          <label className="block text-[12.5px] font-bold mb-[6px]">Jam tersedia</label>
-          <div className="flex gap-[7px] flex-wrap">
+        {/* Slot Times */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">Jam Tersedia</label>
+          <div className="flex gap-2 flex-wrap">
             {SLOTS.map(t => {
-              const taken = v.taken.includes(t);
+              const isTaken = v.taken.includes(t);
+              const isActive = b.time === t;
               return (
                 <button 
-                  key={t} disabled={taken} onClick={() => setB(p => ({ ...p, time: t }))}
-                  className={`text-[12.5px] font-semibold p-[8px_13px] rounded-[20px] border ${taken ? 'opacity-35 cursor-not-allowed line-through bg-card border-line text-muted' : (b.time === t ? 'bg-court border-court text-white cursor-pointer' : 'bg-card border-line text-muted cursor-pointer')}`}
-                >{t}</button>
+                  type="button" 
+                  key={t} 
+                  disabled={isTaken}
+                  title={isTaken ? 'Sudah terpesan' : ''}
+                  onClick={() => setB(prev => ({ ...prev, time: t }))} 
+                  className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-all cursor-pointer ${
+                    isTaken 
+                      ? 'bg-gray-100 text-gray-400 border border-gray-200 line-through cursor-not-allowed opacity-50' 
+                      : isActive 
+                      ? 'bg-[#00754A] text-white shadow-sm' 
+                      : 'bg-white border border-[#d6dbde] text-[rgba(0,0,0,0.87)] hover:bg-[#edebe9]'
+                  }`}
+                >
+                  {t}
+                </button>
               );
             })}
           </div>
-          <div className="text-[11.5px] text-muted mt-[5px] leading-[1.45]">Jam yang dicoret sudah dipesan orang lain.</div>
+          <span className="text-[11.5px] text-[rgba(0,0,0,0.58)]">Jam yang dicoret sudah terpesan oleh tim lain.</span>
         </div>
 
-        <div>
-          <label className="block text-[12.5px] font-bold mb-[6px]">Durasi</label>
-          <div className="flex gap-[7px] flex-wrap">
-            {[1,2,3].map(d => (
-              <button key={d} onClick={() => setB(p => ({ ...p, dur: d }))} className={`text-[12.5px] font-semibold p-[8px_13px] rounded-[20px] border cursor-pointer ${b.dur === d ? 'bg-court border-court text-white' : 'bg-card border-line text-muted'}`}>{d} jam</button>
+        {/* Duration */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">Durasi Pemesanan</label>
+          <div className="flex gap-2 flex-wrap">
+            {[1, 2, 3].map(d => (
+              <button 
+                type="button" 
+                key={d} 
+                onClick={() => setB(prev => ({ ...prev, dur: d }))} 
+                className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all cursor-pointer ${
+                  b.dur === d 
+                    ? 'bg-[#00754A] text-white shadow-sm' 
+                    : 'bg-white border border-[#d6dbde] text-[rgba(0,0,0,0.87)] hover:bg-[#edebe9]'
+                }`}
+              >
+                {d} Jam
+              </button>
             ))}
           </div>
         </div>
 
-        <div>
-          <div className={`flex items-center gap-[11px] bg-card border border-line rounded-radius p-[12px_13px] cursor-pointer`} onClick={() => setB(p => ({ ...p, asSession: !p.asSession }))}>
-            <div className={`w-[42px] h-[24px] rounded-[14px] shrink-0 relative transition-colors ${b.asSession ? 'bg-court' : 'bg-[#DDE3DE]'}`}>
-              <div className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white transition-transform ${b.asSession ? 'translate-x-[18px]' : ''}`}></div>
-            </div>
-            <div>
-              <b className="text-[13.5px] font-bold block">Sekalian buka sesi terbuka</b>
-              <i className="not-italic text-[11.5px] text-muted block mt-[2px] leading-[1.4]">{b.asSession ? 'Pemain lain bisa gabung dan ikut patungan biaya' : 'Venue hanya untuk kamu dan timmu'}</i>
-            </div>
+        {/* Matchmaking Checkbox */}
+        <div 
+          onClick={() => setB(prev => ({ ...prev, asSession: !prev.asSession }))}
+          className="bg-[#edebe9] rounded-[8px] p-3 border border-[#d6dbde] flex items-center gap-3 cursor-pointer select-none"
+        >
+          <input 
+            type="checkbox" 
+            checked={b.asSession} 
+            onChange={() => {}} 
+            className="w-4 h-4 accent-[#00754A] pointer-events-none" 
+          />
+          <div>
+            <b className="text-[13px] text-[rgba(0,0,0,0.87)] block">Buka Sekaligus Sesi Matchmaking</b>
+            <span className="text-[11.5px] text-[rgba(0,0,0,0.58)] block">Pemain lain di SPORA bisa bergabung dan otomatis ikut patungan</span>
           </div>
         </div>
 
-        <div className="bg-ink text-white rounded-radius p-[14px] mb-[12px]">
-          <div className="flex justify-between text-[13px] py-[5px] text-white/72"><span>Jadwal</span><b className="text-white font-bold">{b.time ? b.day+', '+b.time+' – '+endTime(b.time, b.dur) : 'Pilih jam dulu'}</b></div>
-          <div className="flex justify-between text-[13px] py-[5px] text-white/72"><span>Durasi</span><b className="text-white font-bold">{b.dur} jam</b></div>
-          <div className="flex justify-between text-[14px] pt-[10px] mt-[6px] border-t border-white/16 text-white/72"><span className="self-center">Total</span><b className="text-white font-bold text-[19px] tracking-[-.02em]">{rp(total)}</b></div>
+        {/* Summary Card */}
+        <div className="bg-[#edebe9] rounded-[14px] p-4 border border-[#d6dbde] flex flex-col gap-1.5">
+          <div className="flex justify-between items-center text-[13px]">
+            <span className="text-[rgba(0,0,0,0.58)]">Jadwal Terpilih:</span>
+            <b>{b.time ? `${b.day}, ${b.time} – ${endTime(b.time, b.dur)}` : 'Belum memilih jam'}</b>
+          </div>
+          <div className="flex justify-between items-center text-[13px]">
+            <span className="text-[rgba(0,0,0,0.58)]">Durasi:</span>
+            <b>{b.dur} Jam</b>
+          </div>
+          <div className="flex justify-between items-center text-[15px] font-bold pt-2 border-t border-[#d6dbde] text-[#006241]">
+            <span>Total Biaya:</span>
+            <b>{rp(total)}</b>
+          </div>
         </div>
 
         <button 
-          className={`w-full rounded-[11px] p-[14px] text-[15px] font-bold border-0 ${ready ? 'bg-court text-white cursor-pointer' : 'bg-[#CFD8D2] text-[#8B9A92] cursor-not-allowed'}`} 
-          disabled={!ready} onClick={submit}
+          onClick={submit} 
+          disabled={!ready}
+          className="w-full py-3.5 rounded-full bg-[#00754A] hover:bg-[#005c3b] text-white text-[15px] font-bold shadow-[0_2px_8px_rgba(0,117,74,0.25)] transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mt-1"
         >
-          {ready ? (total === 0 ? 'Pesan fasilitas' : 'Sewa venue — ' + rp(total)) : 'Pilih jam dulu'}
+          {ready ? (total === 0 ? 'Konfirmasi Pemesanan Fasilitas' : `Bayar & Sewa Venue (${rp(total)})`) : 'Pilih Jam Terlebih Dahulu'}
         </button>
-        <div className="text-[11.5px] text-muted text-center mt-[9px] leading-[1.5]">
-          {v.rate === 0 ? 'Fasilitas publik tanpa biaya. Pemesanan hanya untuk mencatat penggunaan.' : 'Pembayaran melalui sistem. Pembatalan gratis sampai 12 jam sebelum jadwal.'}
-        </div>
+        <p className="text-[11.5px] text-[rgba(0,0,0,0.58)] text-center -mt-2">
+          {total === 0 
+            ? 'Fasilitas kampus dicatat untuk pencegahan tabrakan jadwal.' 
+            : 'Pembatalan gratis hingga 12 jam sebelum mulai. Kode booking resmi seketika diterbitkan.'}
+        </p>
+
       </div>
-    </>
+    </div>
   );
 }

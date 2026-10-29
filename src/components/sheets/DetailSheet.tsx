@@ -9,73 +9,134 @@ export default function DetailSheet({ id }: { id: string }) {
   if (!s) return null;
 
   const mine = state.joined.has(s.id);
-  const c = s.joined + (mine ? 1 : 0);
-  const pct = Math.min(100, (c / s.min) * 100);
+  const isHost = s.host === 'Kamu';
+  const c = s.joined + (mine && !isHost ? 1 : 0);
+  const pct = Math.min(100, Math.round((c / s.min) * 100));
   const isFull = c >= s.min;
-  const own = s.host === 'Kamu';
   const perHead = s.price === 0 ? 0 : Math.round(s.price * s.min / Math.max(c, 1) / 500) * 500;
 
   const pills = [];
   for(let i=0; i<s.min; i++) {
-    if(mine && i === c-1) pills.push(<span key={i} className="text-[11px] font-semibold bg-amber text-ink p-[4px_9px] rounded-[20px]">{own ? 'Kamu (host)' : 'Kamu'}</span>);
-    else if(i < c) pills.push(<span key={i} className="text-[11px] font-semibold bg-court-soft text-court p-[4px_9px] rounded-[20px]">Pemain {i+1}</span>);
-    else pills.push(<span key={i} className="text-[11px] font-semibold bg-transparent border border-dashed border-ink/22 text-muted p-[3px_8px] rounded-[20px]">kosong</span>);
+    if(mine && i === c-1) {
+      pills.push(
+        <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#1E3932] text-white">
+          {isHost ? 'Kamu (Host)' : 'Kamu'}
+        </span>
+      );
+    } else if(i < c) {
+      pills.push(
+        <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#edebe9] text-[rgba(0,0,0,0.87)]">
+          Pemain {i+1}
+        </span>
+      );
+    } else {
+      pills.push(
+        <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white border border-dashed border-[#d6dbde] text-[rgba(0,0,0,0.58)]">
+          Slot Kosong
+        </span>
+      );
+    }
   }
 
   return (
-    <>
-      <div className="bg-court text-white p-[18px] lg:p-[20px] rounded-[20px_20px_0_0] lg:rounded-[18px_18px_0_0] relative">
-        <button className="absolute right-[14px] top-[14px] bg-white/16 border-0 text-white w-[26px] h-[26px] rounded-full text-[15px] cursor-pointer leading-[1]" onClick={closeSheet}>✕</button>
-        <h3 className="text-[21px] font-extrabold tracking-[-.025em] pr-[30px]">{s.emoji} {s.sport}</h3>
-        <p className="text-[13px] text-white/75 mt-[5px] leading-[1.5]">{s.venue}<br/>{s.day}, {s.time} · {s.dist} dari kosmu</p>
+    <div className="flex flex-col">
+      {/* Top Header */}
+      <div className="p-4 sm:p-5 border-b border-[#e7e7e7] relative">
+        <button 
+          onClick={closeSheet} 
+          aria-label="Tutup"
+          className="absolute right-4 top-4 w-8 h-8 rounded-full bg-[#edebe9] hover:bg-[#d6dbde] text-[rgba(0,0,0,0.87)] grid place-items-center cursor-pointer transition-all border-0 text-[15px]"
+        >
+          ✕
+        </button>
+        <h3 className="text-[20px] sm:text-[22px] font-bold text-[#006241] pr-9 leading-tight">
+          {s.emoji} {s.sport}
+        </h3>
+        <p className="text-[12.5px] text-[rgba(0,0,0,0.58)] mt-1 leading-normal">
+          {s.venue} · {s.day}, {s.time} ({s.dist})
+        </p>
       </div>
-      <div className="p-[16px_14px_20px] lg:p-[20px]">
-        <div className="bg-card border border-line rounded-radius p-[13px] mb-[12px]">
-          <div className="flex justify-between items-center text-[13.5px] py-[7px] gap-[12px]">
-            <span className="text-muted">Level</span><b className="font-bold text-right">{s.level}</b>
+
+      <div className="p-4 sm:p-6 flex flex-col gap-4">
+        {/* Calculation Card */}
+        <div className="bg-[#edebe9] rounded-[14px] p-4 border border-[#d6dbde] flex flex-col gap-2">
+          <div className="flex justify-between items-center text-[13.5px]">
+            <span className="text-[rgba(0,0,0,0.58)]">Level Kemahiran</span>
+            <b className="font-bold">{s.level}</b>
           </div>
-          <div className="flex justify-between items-center text-[13.5px] py-[7px] gap-[12px] border-t border-line">
-            <span className="text-muted">Host</span><b className="font-bold text-right">{s.host}</b>
+          <div className="flex justify-between items-center text-[13.5px]">
+            <span className="text-[rgba(0,0,0,0.58)]">Host Penyelenggara</span>
+            <b className="font-bold">{s.host}</b>
           </div>
-          <div className="flex justify-between items-center text-[13.5px] py-[7px] gap-[12px] border-t border-line">
-            <span className="text-muted">Biaya lapangan</span><b className="font-bold text-right">{s.free ? 'Gratis' : rp(s.price * s.min)}</b>
+          <div className="flex justify-between items-center text-[13.5px]">
+            <span className="text-[rgba(0,0,0,0.58)]">Total Biaya Lapangan</span>
+            <b className="font-bold">{s.free ? 'Gratis (Fasilitas Kampus)' : rp(s.price * s.min)}</b>
           </div>
-          <div className="flex justify-between items-center text-[13.5px] py-[7px] gap-[12px] border-t border-line">
-            <span className="text-muted">Patungan per orang</span><b className={`font-bold text-right text-[17px] tracking-[-.02em] ${s.free ? 'text-court' : ''}`}>{s.free ? 'Rp0' : rp(perHead)}</b>
+          <div className="flex justify-between items-center text-[15px] font-bold pt-2 border-t border-[#d6dbde] text-[#006241]">
+            <span>Patungan per Pemain</span>
+            <b>{s.free ? 'Rp0' : rp(perHead)}</b>
           </div>
         </div>
         
-        <div className="bg-card border border-line rounded-radius p-[14px] mb-[12px]">
-          <h4 className="text-[13.5px] font-bold mb-[3px]">Kuorum pemain</h4>
-          <p className="text-[12.5px] text-muted leading-[1.5]">Sesi berjalan kalau terkumpul minimal {s.min} pemain.</p>
-          <div className="h-[8px] bg-[#E6EAE6] rounded-[5px] my-[12px_9px] overflow-hidden">
-            <i className={`block h-full rounded-[5px] transition-all duration-400 ease-in-out ${isFull ? 'bg-court' : 'bg-amber'}`} style={{ width: `${pct}%` }}></i>
+        {/* Quorum Box */}
+        <div className="bg-[#edebe9] rounded-[14px] p-4 border border-[#d6dbde] flex flex-col gap-2">
+          <div className="flex justify-between items-center flex-wrap gap-1">
+            <b className="text-[13.5px] text-[#006241]">
+              Status Kuorum ({c}/{s.min} Pemain)
+            </b>
+            <span className={`text-[12px] font-bold ${isFull ? 'text-[#006241]' : 'text-[rgba(0,0,0,0.58)]'}`}>
+              {isFull ? '✓ Terpenuhi' : `Kurang ${s.min - c} lagi`}
+            </span>
           </div>
-          <div className={`text-[12px] font-semibold ${isFull ? 'text-court' : 'text-clay'}`}>{isFull ? 'Kuorum tercapai — sesi dikonfirmasi' : `Kurang ${s.min - c} pemain lagi`}</div>
-          <div className="flex gap-[6px] mt-[11px] flex-wrap">
+
+          <div className="w-full h-[7px] rounded-full bg-white overflow-hidden my-1">
+            <div 
+              className={`h-full rounded-full transition-all duration-300 ${isFull ? 'bg-[#006241]' : 'bg-[#00754A]'}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+
+          <div className="flex gap-1.5 flex-wrap mt-1">
             {pills}
           </div>
         </div>
 
-        {own ? (
-          <>
-            <button disabled className="w-full border-0 rounded-[11px] p-[14px] text-[15px] font-bold cursor-not-allowed bg-[#CFD8D2] text-[#8B9A92]">Kamu host sesi ini</button>
-            <div className="text-[11.5px] text-muted text-center mt-[9px] leading-[1.5]">Sesi terbuka untuk umum. Pemain baru bisa bergabung sampai kuorum penuh.</div>
-          </>
-        ) : (
-          <>
-            <button 
-              className={`w-full rounded-[11px] p-[14px] text-[15px] font-bold cursor-pointer transition-colors ${mine ? 'bg-card text-clay border border-clay/40' : 'bg-court text-white border-0'}`}
-              onClick={() => toggleJoin(s.id)}
-            >
-              {mine ? 'Keluar dari sesi' : (s.free ? 'Gabung sesi' : 'Gabung — ' + rp(perHead))}
+        {/* Action Button */}
+        {isHost ? (
+          <div>
+            <button disabled className="w-full py-3 rounded-full border border-[#d6dbde] text-[rgba(0,0,0,0.58)] bg-transparent text-[14px] font-semibold cursor-not-allowed">
+              Kamu adalah Host Sesi Ini
             </button>
-            <div className="text-[11.5px] text-muted text-center mt-[9px] leading-[1.5]">
-              {s.free ? 'Fasilitas gratis. Datang langsung sesuai jadwal.' : 'Dana ditahan sistem. Kalau kuorum tidak tercapai 3 jam sebelum mulai, sesi batal dan dana kembali penuh.'}
-            </div>
-          </>
+            <p className="text-[11.5px] text-[rgba(0,0,0,0.58)] text-center mt-2">
+              Sesi ini terbuka untuk pemain sekitar ITS. Notifikasi otomatis dikirim saat kuorum penuh.
+            </p>
+          </div>
+        ) : mine ? (
+          <div>
+            <button 
+              onClick={() => toggleJoin(s.id)}
+              className="w-full py-3 rounded-full border border-red-500 text-red-600 hover:bg-red-50 text-[14px] font-semibold transition-all cursor-pointer active:scale-95"
+            >
+              Batalkan Ikut Sesi (Keluar)
+            </button>
+            <p className="text-[11.5px] text-[rgba(0,0,0,0.58)] text-center mt-2">
+              Pembatalan sebelum kuorum tercapai tidak dikenakan penalti fairplay.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <button 
+              onClick={() => toggleJoin(s.id)}
+              className="w-full py-3.5 rounded-full bg-[#00754A] hover:bg-[#005c3b] text-white text-[15px] font-bold shadow-[0_2px_8px_rgba(0,117,74,0.25)] transition-all cursor-pointer active:scale-95"
+            >
+              {s.free ? 'Gabung Sesi Sekarang (Gratis)' : `Gabung & Patungan ${rp(perHead)}`}
+            </button>
+            <p className="text-[11.5px] text-[rgba(0,0,0,0.58)] text-center mt-2">
+              {s.free ? 'Fasilitas kampus bebas biaya. Cukup hadir dengan perlengkapan pribadi.' : 'Patungan aman dengan garansi 100% refund bila kuorum tidak terpenuhi.'}
+            </p>
+          </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

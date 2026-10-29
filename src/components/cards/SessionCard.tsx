@@ -1,53 +1,90 @@
 'use client';
 import { Session } from '@/types';
-import { rp } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
+import { rp } from '@/lib/utils';
 
-export default function SessionCard({ session }: { session: Session }) {
+export default function SessionCard({ session: s }: { session: Session }) {
   const { state, openSheet } = useAppStore();
-  
-  const mine = state.joined.has(session.id);
-  const c = session.joined + (mine ? 1 : 0);
-  const pct = Math.min(100, (c / session.min) * 100);
-  const own = session.host === 'Kamu';
-  const isFull = c >= session.min;
 
-  const levelTagCls = session.level === 'Pemula' ? '' : session.level === 'Semua level' ? 'bg-[#EEF1EE] text-muted' : 'bg-[#FFF1D6] text-[#8A5A00]';
+  const isMine = state.joined.has(s.id);
+  const isHost = s.host === 'Kamu';
+  const count = s.joined + (isMine && !isHost ? 1 : 0);
+  const isFull = count >= s.min;
+  const pct = Math.min(100, Math.round((count / s.min) * 100));
 
   return (
-    <div 
-      className={`bg-card border rounded-radius p-[13px] cursor-pointer transition-colors flex flex-col hover:border-court/35 ${own ? 'border-l-[3px] border-l-amber border-y-line border-r-line' : 'border-line'}`}
-      tabIndex={0}
-      onClick={() => openSheet('detail', session.id)}
-      onKeyDown={(e) => e.key === 'Enter' && openSheet('detail', session.id)}
+    <article
+      onClick={() => openSheet('detail', s.id)}
+      className={`bg-white rounded-[14px] p-4 sm:p-5 elev-raised border border-black/5 flex flex-col gap-3 sm:gap-4 cursor-pointer select-none transition-all hover:elev-card-hover hover:border-[#d6dbde] hover:-translate-y-0.5 active:scale-[0.98] ${
+        isHost
+          ? 'border-l-4 border-l-[#006241]'
+          : isMine
+          ? 'border-l-4 border-l-[#00754A]'
+          : ''
+      }`}
     >
-      <div className="flex justify-between items-start gap-[10px] flex-1">
-        <div>
-          <div className="text-[15px] font-bold tracking-[-.01em]">{session.emoji} {session.sport}</div>
-          <div className="text-[12.5px] text-muted mt-[3px] leading-[1.45]">{session.venue}<br/>{session.day}, {session.time} · {session.dist}</div>
-        </div>
-        <div className={`text-[14px] font-bold whitespace-nowrap text-right ${session.free ? 'text-court' : ''}`}>
-          {rp(session.price)}
-          <small className="block text-[10.5px] text-muted font-medium mt-[1px]">{session.free ? 'tanpa biaya' : 'per orang'}</small>
-        </div>
-      </div>
-      
-      <div className="flex items-center gap-[8px] mt-[11px] pt-[11px] border-t border-line flex-wrap">
-        <span className={`text-[11px] font-semibold py-[3px] px-[8px] rounded-[20px] ${levelTagCls || 'bg-court-soft text-court'}`}>{session.level}</span>
-        {session.free && <span className="text-[11px] font-semibold py-[3px] px-[8px] rounded-[20px] bg-[#DDF0E4] text-[#186B41]">Gratis</span>}
-        {own ? (
-          <span className="text-[11px] font-semibold py-[3px] px-[8px] rounded-[20px] bg-amber text-ink">Sesimu</span>
-        ) : (mine ? (
-          <span className="text-[11px] font-semibold py-[3px] px-[8px] rounded-[20px] bg-[#FFF1D6] text-[#8A5A00]">Kamu ikut</span>
-        ) : null)}
-        
-        <div className="ml-auto text-[11.5px] text-muted font-semibold flex items-center gap-[6px]">
-          <div className="w-[44px] h-[5px] bg-[#E6EAE6] rounded-[3px] overflow-hidden">
-            <i className={`block h-full rounded-[3px] transition-all duration-350 ease-in-out ${isFull ? 'bg-court' : 'bg-amber'}`} style={{ width: `${pct}%` }}></i>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-7 h-7 rounded-full bg-[#edebe9] grid place-items-center text-[15px] shrink-0">
+              {s.emoji}
+            </span>
+            <span className="text-[17px] sm:text-[18px] font-bold text-[#006241] leading-tight truncate">
+              {s.sport}
+            </span>
           </div>
-          {c}/{session.min}
+          <div className="text-[14px] text-[rgba(0,0,0,0.87)] font-medium leading-snug truncate">
+            {s.venue}
+          </div>
+          <div className="text-[12px] text-[rgba(0,0,0,0.58)] mt-0.5">
+            {s.day}, {s.time} · {s.dist}
+          </div>
+        </div>
+
+        <div className="text-right shrink-0">
+          <div className={`text-[17px] font-bold leading-tight whitespace-nowrap ${s.free ? 'text-[#006241]' : 'text-[#00754A]'}`}>
+            {rp(s.price)}
+          </div>
+          <span className="text-[11px] text-[rgba(0,0,0,0.58)] block mt-0.5 whitespace-nowrap">
+            {s.free ? 'Bebas biaya' : 'per pemain'}
+          </span>
         </div>
       </div>
-    </div>
+
+      {/* Quorum Progress Bar */}
+      <div className="flex flex-col gap-1.5 pt-2 border-t border-[#e7e7e7]">
+        <div className="w-full h-[7px] rounded-full bg-[#edebe9] overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${isFull ? 'bg-[#006241]' : 'bg-[#00754A]'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#edebe9] text-[rgba(0,0,0,0.87)]">
+              {s.level}
+            </span>
+            {s.free && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#d4e9e2] text-[#006241]">
+                Gratis
+              </span>
+            )}
+            {isHost ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#006241] text-white">
+                Sesimu (Host)
+              </span>
+            ) : isMine ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#1E3932] text-white">
+                Kamu Ikut
+              </span>
+            ) : null}
+          </div>
+          <span className="text-[12px] font-semibold text-[rgba(0,0,0,0.87)] whitespace-nowrap">
+            {count}/{s.min} Kuorum
+          </span>
+        </div>
+      </div>
+    </article>
   );
 }

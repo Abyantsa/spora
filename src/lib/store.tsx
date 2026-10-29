@@ -82,7 +82,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Init Auth & Fetch Supabase Data
   useEffect(() => {
-    const isSupabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const isSupabaseConfigured = 
+      !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
+      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy');
 
     const checkAuthAndFetch = async () => {
       if (isSupabaseConfigured) {
