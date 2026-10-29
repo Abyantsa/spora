@@ -4,13 +4,18 @@ import { useAppStore, SPORTS, DAYS, SLOTS } from '@/lib/store';
 import { rp, endTime } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
-export default function CreateSheet() {
+export default function CreateSheet({ initialVenueId }: { initialVenueId?: string | null }) {
   const { state, addSession, closeSheet, showToast } = useAppStore();
   const router = useRouter();
 
+  const selectedVenue = initialVenueId ? state.venues.find(x => x.id === initialVenueId) : null;
+  const initialVId = selectedVenue ? selectedVenue.id : 'v2';
+  const initialCost = selectedVenue ? selectedVenue.rate * 2 : 120000;
+  const initialSport = selectedVenue ? selectedVenue.sports.split(',')[0].trim() : 'Badminton';
+
   const [form, setForm] = useState({
-    sport: 'Badminton', venueId: 'v2', customVenue: '', day: 'Selasa', 
-    time: '15.00', dur: 2, level: 'Pemula', min: 6, cost: 120000, openSession: true
+    sport: initialSport, venueId: initialVId, customVenue: '', day: 'Selasa', 
+    time: '15.00', dur: 2, level: 'Pemula', min: 6, cost: initialCost, openSession: true
   });
 
   const v = state.venues.find(x => x.id === form.venueId);

@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { key: 'explore', label: 'Jelajah', href: '/explore' },
   { key: 'venue', label: 'Venue', href: '/venue' },
   { key: 'mine', label: 'Sesiku', href: '/mine', hasBadge: true },
+  { key: 'chat', label: 'Chat Mabar', href: '/chat' },
   { key: 'profile', label: 'Profil', href: '/profile' },
 ];
 
@@ -42,7 +43,7 @@ export default function Navbar() {
               <Link
                 key={item.key}
                 href={item.href}
-                className={`inline-flex items-center gap-[6px] px-[16px] py-[8px] rounded-full text-[14px] font-semibold transition-all ${
+                className={`inline-flex items-center gap-[6px] px-[15px] py-[8px] rounded-full text-[13.5px] font-semibold transition-all ${
                   isActive
                     ? 'bg-[#edebe9] text-[#006241] border border-[#d6dbde]'
                     : 'text-[rgba(0,0,0,0.87)] hover:bg-[#edebe9]'
@@ -107,4 +108,3 @@ export default function Navbar() {
     </header>
   );
 }
-

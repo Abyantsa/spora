@@ -8,6 +8,7 @@ export interface Venue {
   taken: string[];
   owner: string;
   note: string;
+  maps_url?: string;
 }
 
 export interface Session {
@@ -45,4 +46,13 @@ export interface UserSchedule {
   start_time: string;
   end_time: string;
   is_free_time?: boolean;
+}
+
+export interface ChatMessage {
+  id: string;
+  session_id: string;
+  user_name: string;
+  is_host?: boolean;
+  text: string;
+  time: string;
 }
