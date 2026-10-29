@@ -16,12 +16,12 @@ export default function CreateSheet() {
   const v = state.venues.find(x => x.id === form.venueId);
   const per = form.cost === 0 ? 0 : Math.round(form.cost / form.min / 500) * 500;
 
-  const updateForm = (k: string, val: any) => {
+  const updateForm = (k: string, val: string | number | boolean) => {
     setForm(prev => {
       const next = { ...prev, [k]: val };
       if (k === 'venueId' || k === 'dur') {
         const v2 = state.venues.find(x => x.id === next.venueId);
-        if (v2) next.cost = v2.rate * next.dur;
+        if (v2) next.cost = v2.rate * Number(next.dur);
       }
       return next;
     });
@@ -30,7 +30,7 @@ export default function CreateSheet() {
   const submit = () => {
     const venueName = form.venueId === 'other' ? (form.customVenue.trim() || 'Lokasi lain') : v?.n || 'Lokasi';
     const sp = SPORTS.find(x => x.n === form.sport) || { e: '🏅' };
-    const id = 'u' + Date.now();
+    const id = 'session-user-' + Date.now();
     addSession({
       id, sport: form.sport, emoji: sp.e, venue: venueName,
       day: form.day, time: form.time + ' – ' + endTime(form.time, form.dur),
@@ -41,110 +41,208 @@ export default function CreateSheet() {
     });
     closeSheet();
     router.push('/mine');
-    showToast(`Sesi ${form.sport} dibuat. ${form.openSession ? 'Sudah terbuka untuk umum.' : 'Bagikan tautan ke temanmu.'}`);
+    showToast(`Sesi ${form.sport} berhasil diterbitkan dan masuk ke Sesiku.`);
   };
 
   return (
-    <>
-      <div className="bg-court text-white p-[18px] lg:p-[20px] rounded-[20px_20px_0_0] lg:rounded-[18px_18px_0_0] relative">
-        <button className="absolute right-[14px] top-[14px] bg-white/16 border-0 text-white w-[26px] h-[26px] rounded-full text-[15px] cursor-pointer leading-[1]" onClick={closeSheet}>✕</button>
-        <h3 className="text-[21px] font-extrabold tracking-[-.025em]">Buat sesi</h3>
-        <p className="text-[13px] text-white/75 mt-[5px] leading-[1.5]">Atur sendiri cabang, tempat, waktu, dan aturan patungannya.</p>
+    <div className="flex flex-col">
+      {/* Top Header */}
+      <div className="p-4 sm:p-5 border-b border-[#e7e7e7] relative">
+        <button 
+          onClick={closeSheet} 
+          aria-label="Tutup"
+          className="absolute right-4 top-4 w-8 h-8 rounded-full bg-[#edebe9] hover:bg-[#d6dbde] text-[rgba(0,0,0,0.87)] grid place-items-center cursor-pointer transition-all border-0 text-[15px]"
+        >
+          ✕
+        </button>
+        <h3 className="text-[20px] sm:text-[22px] font-bold text-[#006241] pr-9 leading-tight">
+          Buat Sesi Olahraga Baru
+        </h3>
+        <p className="text-[12.5px] text-[rgba(0,0,0,0.58)] mt-1 leading-normal">
+          Buka sesi permainan, tentukan kuorum, dan ajak pemain lain patungan.
+        </p>
       </div>
-      <div className="p-[16px_14px_20px] lg:p-[20px] flex flex-col gap-[14px]">
+
+      <div className="p-4 sm:p-6 flex flex-col gap-4">
         
-        <div>
-          <label className="block text-[12.5px] font-bold mb-[6px]">Cabang olahraga</label>
-          <select className="w-full bg-card border border-line rounded-[10px] p-[11px_12px] text-[14px] focus:outline-court focus:outline-2 focus:-outline-offset-1" value={form.sport} onChange={e => updateForm('sport', e.target.value)}>
-            {SPORTS.map(s => <option key={s.n} value={s.n}>{s.n}</option>)}
+        {/* Sport Select */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">
+            Cabang Olahraga
+          </label>
+          <select 
+            className="w-full bg-white border border-[#d6dbde] rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#00754A] focus:ring-2 focus:ring-[#00754A]/20"
+            value={form.sport} 
+            onChange={e => updateForm('sport', e.target.value)}
+          >
+            {SPORTS.map(s => <option key={s.n} value={s.n}>{s.e} {s.n}</option>)}
           </select>
         </div>
 
-        <div>
-          <label className="block text-[12.5px] font-bold mb-[6px]">Tempat</label>
-          <select className="w-full bg-card border border-line rounded-[10px] p-[11px_12px] text-[14px] focus:outline-court focus:outline-2 focus:-outline-offset-1" value={form.venueId} onChange={e => updateForm('venueId', e.target.value)}>
-            {state.venues.map(x => <option key={x.id} value={x.id}>{x.n} — {x.rate === 0 ? 'gratis' : rp(x.rate) + '/jam'}</option>)}
-            <option value="other">Lokasi lain…</option>
+        {/* Venue Select */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">
+            Venue Lapangan
+          </label>
+          <select 
+            className="w-full bg-white border border-[#d6dbde] rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#00754A] focus:ring-2 focus:ring-[#00754A]/20"
+            value={form.venueId} 
+            onChange={e => updateForm('venueId', e.target.value)}
+          >
+            {state.venues.map(x => (
+              <option key={x.id} value={x.id}>
+                {x.n} ({x.rate === 0 ? 'Gratis' : rp(x.rate) + '/jam'})
+              </option>
+            ))}
+            <option value="other">Lokasi Lain / Lapangan Kos…</option>
           </select>
           {form.venueId === 'other' ? (
-            <input type="text" placeholder="Nama tempat" value={form.customVenue} onChange={e => updateForm('customVenue', e.target.value)} className="w-full bg-card border border-line rounded-[10px] p-[11px_12px] text-[14px] focus:outline-court mt-[9px]" />
+            <input 
+              type="text" 
+              placeholder="Nama tempat atau lapangan..." 
+              value={form.customVenue} 
+              onChange={e => updateForm('customVenue', e.target.value)} 
+              className="w-full bg-white border border-[#d6dbde] rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#00754A] mt-1" 
+            />
           ) : (
-            <div className="text-[11.5px] text-muted mt-[5px] leading-[1.45]">{v?.note}</div>
+            <span className="text-[11.5px] text-[rgba(0,0,0,0.58)]">{v?.note}</span>
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-[10px]">
-          <div>
-            <label className="block text-[12.5px] font-bold mb-[6px]">Hari</label>
-            <select className="w-full bg-card border border-line rounded-[10px] p-[11px_12px] text-[14px] focus:outline-court focus:outline-2 focus:-outline-offset-1" value={form.day} onChange={e => updateForm('day', e.target.value)}>
+        {/* Day & Time */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">Hari</label>
+            <select 
+              className="w-full bg-white border border-[#d6dbde] rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#00754A]" 
+              value={form.day} 
+              onChange={e => updateForm('day', e.target.value)}
+            >
               {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
-          <div>
-            <label className="block text-[12.5px] font-bold mb-[6px]">Jam mulai</label>
-            <select className="w-full bg-card border border-line rounded-[10px] p-[11px_12px] text-[14px] focus:outline-court focus:outline-2 focus:-outline-offset-1" value={form.time} onChange={e => updateForm('time', e.target.value)}>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">Jam Mulai</label>
+            <select 
+              className="w-full bg-white border border-[#d6dbde] rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#00754A]" 
+              value={form.time} 
+              onChange={e => updateForm('time', e.target.value)}
+            >
               {SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
         </div>
 
-        <div>
-          <label className="block text-[12.5px] font-bold mb-[6px]">Durasi</label>
-          <div className="flex gap-[7px] flex-wrap">
-            {[1,2,3].map(d => (
-              <button key={d} onClick={() => updateForm('dur', d)} className={`text-[12.5px] font-semibold p-[8px_13px] rounded-[20px] border cursor-pointer ${form.dur === d ? 'bg-court border-court text-white' : 'bg-card border-line text-muted'}`}>{d} jam</button>
+        {/* Duration */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">Durasi Main</label>
+          <div className="flex gap-2 flex-wrap">
+            {[1, 2, 3].map(d => (
+              <button 
+                type="button" 
+                key={d} 
+                onClick={() => updateForm('dur', d)} 
+                className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all cursor-pointer ${
+                  form.dur === d 
+                    ? 'bg-[#00754A] text-white shadow-sm' 
+                    : 'bg-white border border-[#d6dbde] text-[rgba(0,0,0,0.87)] hover:bg-[#edebe9]'
+                }`}
+              >
+                {d} Jam ({endTime(form.time, d)})
+              </button>
             ))}
           </div>
-          <div className="text-[11.5px] text-muted mt-[5px] leading-[1.45]">Selesai pukul {endTime(form.time, form.dur)}</div>
         </div>
 
-        <div>
-          <label className="block text-[12.5px] font-bold mb-[6px]">Level pemain</label>
-          <div className="flex gap-[7px] flex-wrap">
-            {['Pemula','Menengah','Semua level'].map(l => (
-              <button key={l} onClick={() => updateForm('level', l)} className={`text-[12.5px] font-semibold p-[8px_13px] rounded-[20px] border cursor-pointer ${form.level === l ? 'bg-court border-court text-white' : 'bg-card border-line text-muted'}`}>{l}</button>
+        {/* Level */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">Level Kemahiran</label>
+          <div className="flex gap-2 flex-wrap">
+            {['Pemula', 'Menengah', 'Semua level'].map(l => (
+              <button 
+                type="button" 
+                key={l} 
+                onClick={() => updateForm('level', l)} 
+                className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all cursor-pointer ${
+                  form.level === l 
+                    ? 'bg-[#00754A] text-white shadow-sm' 
+                    : 'bg-white border border-[#d6dbde] text-[rgba(0,0,0,0.87)] hover:bg-[#edebe9]'
+                }`}
+              >
+                {l}
+              </button>
             ))}
           </div>
         </div>
 
-        <div>
-          <label className="block text-[12.5px] font-bold mb-[6px]">Jumlah pemain minimal</label>
-          <div className="flex items-center gap-[12px]">
-            <button onClick={() => updateForm('min', Math.max(2, form.min - 1))} className="w-[38px] h-[38px] rounded-[10px] border border-line bg-card text-[19px] font-semibold cursor-pointer">−</button>
-            <b className="text-[19px] font-extrabold min-w-[34px] text-center">{form.min}</b>
-            <button onClick={() => updateForm('min', Math.min(24, form.min + 1))} className="w-[38px] h-[38px] rounded-[10px] border border-line bg-card text-[19px] font-semibold cursor-pointer">+</button>
-            <span className="text-[12.5px] text-muted">Sesi batal otomatis kalau tidak tercapai</span>
+        {/* Min Players Stepper */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">Jumlah Kuorum Minimal</label>
+          <div className="inline-flex items-center gap-3 bg-[#edebe9] border border-[#d6dbde] rounded-full px-3 py-1 w-fit">
+            <button 
+              type="button" 
+              onClick={() => updateForm('min', Math.max(2, form.min - 1))}
+              className="w-8 h-8 rounded-full bg-white border border-[#d6dbde] text-[16px] font-bold grid place-items-center cursor-pointer hover:bg-[#edebe9]"
+            >
+              −
+            </button>
+            <span className="text-[16px] font-bold min-w-6 text-center">{form.min}</span>
+            <button 
+              type="button" 
+              onClick={() => updateForm('min', Math.min(24, form.min + 1))}
+              className="w-8 h-8 rounded-full bg-white border border-[#d6dbde] text-[16px] font-bold grid place-items-center cursor-pointer hover:bg-[#edebe9]"
+            >
+              +
+            </button>
+            <span className="text-[12px] text-[rgba(0,0,0,0.58)] font-semibold pr-1">Orang</span>
           </div>
         </div>
 
-        <div>
-          <label className="block text-[12.5px] font-bold mb-[6px]">Total biaya lapangan</label>
-          <input type="number" step="5000" min="0" value={form.cost} onChange={e => updateForm('cost', +e.target.value || 0)} className="w-full bg-card border border-line rounded-[10px] p-[11px_12px] text-[14px] focus:outline-court focus:outline-2 focus:-outline-offset-1" />
-          <div className="text-[11.5px] text-muted mt-[5px] leading-[1.45]">Terisi otomatis dari tarif venue. Ubah kalau ada biaya lain seperti sewa raket atau bola.</div>
+        {/* Total Cost */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] uppercase tracking-wider">Total Biaya Lapangan</label>
+          <input 
+            type="number" 
+            step="5000" 
+            min="0" 
+            value={form.cost} 
+            onChange={e => updateForm('cost', +e.target.value || 0)} 
+            className="w-full bg-white border border-[#d6dbde] rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#00754A]" 
+          />
+          <span className="text-[11.5px] text-[rgba(0,0,0,0.58)]">Terisi otomatis dari tarif venue. Ubah kalau ada biaya shuttlecock/bola.</span>
         </div>
 
-        <div>
-          <div className={`flex items-center gap-[11px] bg-card border border-line rounded-radius p-[12px_13px] cursor-pointer ${form.openSession ? 'on' : ''}`} onClick={() => updateForm('openSession', !form.openSession)}>
-            <div className={`w-[42px] h-[24px] rounded-[14px] shrink-0 relative transition-colors ${form.openSession ? 'bg-court' : 'bg-[#DDE3DE]'}`}>
-              <div className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white transition-transform ${form.openSession ? 'translate-x-[18px]' : ''}`}></div>
-            </div>
-            <div>
-              <b className="text-[13.5px] font-bold block">Buka untuk umum</b>
-              <i className="not-italic text-[11.5px] text-muted block mt-[2px] leading-[1.4]">{form.openSession ? 'Siapa pun bisa gabung sampai kuorum penuh' : 'Hanya lewat tautan undangan yang kamu bagikan'}</i>
-            </div>
+        {/* Cost Calculation Card */}
+        <div className="bg-[#edebe9] rounded-[14px] p-4 border border-[#d6dbde] flex flex-col gap-1.5">
+          <div className="flex justify-between items-center text-[13px]">
+            <span className="text-[rgba(0,0,0,0.58)]">Jadwal Main:</span>
+            <b>{form.day}, {form.time} – {endTime(form.time, form.dur)}</b>
+          </div>
+          <div className="flex justify-between items-center text-[13px]">
+            <span className="text-[rgba(0,0,0,0.58)]">Kuorum Minimal:</span>
+            <b>{form.min} Orang</b>
+          </div>
+          <div className="flex justify-between items-center text-[13px]">
+            <span className="text-[rgba(0,0,0,0.58)]">Total Biaya:</span>
+            <b>{rp(form.cost)}</b>
+          </div>
+          <div className="flex justify-between items-center text-[15px] font-bold pt-2 border-t border-[#d6dbde] text-[#006241]">
+            <span>Patungan per Pemain:</span>
+            <b>{rp(per)}</b>
           </div>
         </div>
 
-        <div className="bg-ink text-white rounded-radius p-[14px] mb-[12px]">
-          <div className="flex justify-between text-[13px] py-[5px] text-white/72"><span>Jadwal</span><b className="text-white font-bold">{form.day}, {form.time} – {endTime(form.time, form.dur)}</b></div>
-          <div className="flex justify-between text-[13px] py-[5px] text-white/72"><span>Pemain minimal</span><b className="text-white font-bold">{form.min} orang</b></div>
-          <div className="flex justify-between text-[13px] py-[5px] text-white/72"><span>Biaya lapangan</span><b className="text-white font-bold">{rp(form.cost)}</b></div>
-          <div className="flex justify-between text-[14px] pt-[10px] mt-[6px] border-t border-white/16 text-white/72"><span className="self-center">Patungan per orang</span><b className="text-white font-bold text-[19px] tracking-[-.02em]">{rp(per)}</b></div>
-        </div>
+        <button 
+          onClick={submit} 
+          className="w-full py-3.5 rounded-full bg-[#00754A] hover:bg-[#005c3b] text-white text-[15px] font-bold shadow-[0_2px_8px_rgba(0,117,74,0.25)] transition-all cursor-pointer active:scale-95 mt-1"
+        >
+          Terbitkan Sesi Olahraga
+        </button>
+        <p className="text-[11.5px] text-[rgba(0,0,0,0.58)] text-center -mt-2">
+          Kamu otomatis terdaftar sebagai Host dan terhitung sebagai pemain pertama.
+        </p>
 
-        <button className="w-full bg-court text-white border-0 rounded-[11px] p-[14px] text-[15px] font-bold cursor-pointer" onClick={submit}>Buat sesi</button>
-        <div className="text-[11.5px] text-muted text-center mt-[9px] leading-[1.5]">Kamu otomatis jadi host dan terhitung sebagai pemain pertama.</div>
       </div>
-    </>
+    </div>
   );
 }

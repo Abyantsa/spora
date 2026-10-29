@@ -6,8 +6,17 @@ export default function Toast() {
   const isOn = !!state.toastMsg;
 
   return (
-    <div className={`fixed left-[14px] right-[14px] bottom-[84px] lg:left-auto lg:right-[24px] lg:bottom-[28px] max-w-[340px] bg-ink text-white rounded-[11px] p-[12px_14px] text-[13px] font-medium z-40 pointer-events-none transition-all duration-240 leading-[1.45] ${isOn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-      {state.toastMsg}
+    <div 
+      className={`fixed bottom-[80px] sm:bottom-[30px] left-1/2 -translate-x-1/2 sm:left-auto sm:right-[30px] sm:translate-x-0 bg-[#1E3932] text-white px-5 py-2.5 rounded-full text-[13.5px] font-semibold flex items-center gap-2 shadow-[0_8px_24px_rgba(0,0,0,0.22)] z-50 pointer-events-none transition-all duration-200 max-w-[90vw] text-center ${
+        isOn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+      }`}
+    >
+      <span className="text-[#cba258] grid place-items-center shrink-0">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </span>
+      <span>{state.toastMsg}</span>
     </div>
   );
 }

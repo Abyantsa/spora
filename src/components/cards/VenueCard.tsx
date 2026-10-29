@@ -3,26 +3,34 @@ import { Venue } from '@/types';
 import { rp } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
 
-export default function VenueCard({ venue }: { venue: Venue }) {
+export default function VenueCard({ venue: v }: { venue: Venue }) {
   const { openSheet } = useAppStore();
 
   return (
     <div 
-      className="bg-card border border-line rounded-radius p-[12px_13px] flex items-center gap-[11px] cursor-pointer transition-colors hover:border-court/35 focus-visible:outline-amber"
+      className="bg-white rounded-[14px] p-3.5 sm:p-4 elev-raised border border-transparent flex items-center gap-3 sm:gap-4 cursor-pointer select-none transition-all hover:elev-card-hover hover:border-[#d6dbde] hover:-translate-y-0.5 active:scale-[0.98]"
       tabIndex={0}
-      onClick={() => openSheet('book', venue.id)}
-      onKeyDown={(e) => e.key === 'Enter' && openSheet('book', venue.id)}
+      onClick={() => openSheet('book', v.id)}
+      onKeyDown={(e) => e.key === 'Enter' && openSheet('book', v.id)}
     >
-      <div className="w-[34px] h-[34px] rounded-[9px] bg-court-soft grid place-items-center text-[16px] shrink-0">
-        {venue.e}
+      <div className="w-[44px] sm:w-[48px] h-[44px] sm:h-[48px] rounded-[12px] bg-[#edebe9] grid place-items-center text-[20px] sm:text-[22px] shrink-0">
+        {v.e}
       </div>
-      <div>
-        <div className="text-[14px] font-semibold tracking-[-.01em]">{venue.n}</div>
-        <div className="text-[11.5px] text-muted mt-[2px]">{venue.sports} · {venue.dist}</div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] sm:text-[16px] font-bold text-[#006241] truncate leading-snug">
+          {v.n}
+        </div>
+        <div className="text-[12px] text-[rgba(0,0,0,0.58)] mt-0.5 truncate leading-normal">
+          {v.sports} · {v.dist} · {v.owner}
+        </div>
       </div>
-      <div className={`ml-auto text-right text-[13px] font-bold whitespace-nowrap ${venue.rate === 0 ? 'text-court' : ''}`}>
-        {venue.rate === 0 ? 'Gratis' : rp(venue.rate)}
-        <small className="block text-[10px] text-muted font-medium mt-[1px]">{venue.rate === 0 ? 'fasilitas publik' : 'per jam'}</small>
+      <div className="text-right shrink-0">
+        <span className={`text-[13.5px] font-bold whitespace-nowrap block ${v.rate === 0 ? 'text-[#006241]' : 'text-[#00754A]'}`}>
+          {v.rate === 0 ? 'Gratis' : rp(v.rate)}
+        </span>
+        <span className="text-[11px] text-[rgba(0,0,0,0.58)] block whitespace-nowrap">
+          {v.rate === 0 ? 'Fasilitas umum' : '/ jam'}
+        </span>
       </div>
     </div>
   );

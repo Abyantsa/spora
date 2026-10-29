@@ -1,0 +1,96 @@
+name: CI & Auto Merge Dev to Main
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------------------------------------------------
+  # 1. Pengecekan Kualitas Kode (TypeScript, ESLint, & Build)
+  # ---------------------------------------------------------
+  quality-check:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check TypeScript types
+        run: npx tsc --noEmit
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Test Build Next.js
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy' }}
+
+  # ---------------------------------------------------------
+  # 2. Pengecekan Keamanan (Dependency Audit & Secret Leak)
+  # ---------------------------------------------------------
+  security-check:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code (Full history untuk scan git)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Audit NPM Dependencies
+        # Memeriksa vulnerability dependencies (misal level critical)
+        run: npm audit --audit-level=critical
+
+      - name: Secret Scanning (TruffleHog)
+        # Memastikan tidak ada token/API Key/Secret yang bocor di commit
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+  # ---------------------------------------------------------
+  # 3. Otomatis Merge ke Branch 'main' jika semua lolos
+  # ---------------------------------------------------------
+  auto-merge:
+    name: Auto Merge to Main
+    needs: [quality-check, security-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git Bot
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge dev into main and push
+        run: |
+          git fetch origin main
+          git checkout main
+          git merge origin/dev --no-ff -m "ci: auto-merge 'dev' into 'main' [skip ci]"
+          git push origin main
+

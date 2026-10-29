@@ -2,66 +2,128 @@
 import { useAppStore, PASSPORT } from '@/lib/store';
 
 export default function ProfilePage() {
-  const { state } = useAppStore();
+  const { state, logout } = useAppStore();
   
   const tried = new Set(state.tried);
   state.sessions.forEach(s => {
     if (state.joined.has(s.id)) tried.add(s.sport.split(' ')[0]);
   });
 
+  const userName = state.user?.email ? state.user.email.split('@')[0] : 'Kellan A.';
+  const userRole = state.user?.email ? `${state.user.email} · Mahasiswa ITS` : 'Sistem Informasi ITS · Angkatan 2023 · Mulyosari';
+
   return (
-    <>
-      <div className="bg-court text-white p-[20px_18px_18px] lg:p-[34px_40px_28px]">
-        <h2 className="text-[20px] font-bold tracking-[-.02em]">Kellan</h2>
-        <p className="text-[13px] text-white/72 mt-[4px]">Mahasiswa ITS · Mulyosari</p>
-      </div>
+    <div className="bg-white rounded-[14px] p-5 sm:p-8 elev-raised flex flex-col gap-6">
       
-      <div className="p-[16px_14px_26px] lg:p-[26px_40px_50px] lg:max-w-[1180px] lg:mx-auto lg:w-full">
-        <div className="bg-card border border-line rounded-radius p-[16px] mb-[16px]">
-          <div className="flex items-end gap-[12px]">
-            <div className="text-[40px] font-extrabold tracking-[-.04em] leading-[.9]">92</div>
-            <div className="text-[12.5px] text-muted leading-[1.45] pb-[3px]">Skor kehadiran<br/>Hadir di 23 dari 25 sesi terakhir</div>
+      {/* Profile Header */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-full bg-[#006241] text-white grid place-items-center text-[22px] sm:text-[26px] font-extrabold shrink-0 shadow-[0_2px_8px_rgba(0,98,65,0.2)]">
+            {userName[0].toUpperCase()}
           </div>
-          <div className="h-[7px] bg-[#E6EAE6] rounded-[4px] mt-[13px] overflow-hidden">
-            <i className="block h-full w-[92%] bg-court rounded-[4px]"></i>
+          <div>
+            <h1 className="text-[20px] sm:text-[24px] font-bold text-[#006241] leading-tight">
+              {userName}
+            </h1>
+            <p className="text-[13px] text-[rgba(0,0,0,0.58)] mt-0.5">
+              {userRole}
+            </p>
           </div>
+        </div>
+        
+        {state.user && (
+          <button
+            onClick={logout}
+            className="text-[12px] font-semibold text-clay border border-[#d6dbde] px-4 py-1.5 rounded-full hover:bg-red-50 hover:border-red-200 transition-all cursor-pointer"
+          >
+            Keluar (Logout)
+          </button>
+        )}
+      </div>
+
+      {/* Attendance Score Highlight */}
+      <div className="bg-[#edebe9] rounded-[14px] p-4 sm:p-5 border border-[#d6dbde]">
+        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+          <div>
+            <b className="text-[15px] sm:text-[16px] text-[#006241] block">
+              Skor Kehadiran & Sportivitas
+            </b>
+            <p className="text-[12.5px] text-[rgba(0,0,0,0.58)] mt-0.5">
+              Hadir di 23 dari 25 sesi komunitas terakhir tanpa pembatalan mendadak.
+            </p>
+          </div>
+          <span className="text-[28px] font-extrabold text-[#cba258] leading-none">
+            92%
+          </span>
+        </div>
+        <div className="w-full h-[7px] rounded-full bg-white/70 overflow-hidden">
+          <div className="h-full rounded-full bg-[#cba258]" style={{ width: '92%' }} />
+        </div>
+      </div>
+
+      {/* Sport Passport Stamps */}
+      <div>
+        <div className="flex items-baseline justify-between gap-3 mb-3">
+          <h2 className="text-[16px] sm:text-[18px] font-bold text-[#006241] tracking-[-0.01em]">
+            Sport Passport Surabaya
+          </h2>
+          <span className="text-[12px] font-semibold text-[rgba(0,0,0,0.58)] uppercase tracking-wider">
+            {tried.size} dari 6 Cabang Terbuka
+          </span>
         </div>
 
-        <div className="flex items-center justify-between m-[20px_2px_10px]">
-          <h3 className="text-[15px] font-bold tracking-[-.015em]">Sport Passport</h3>
-          <span className="text-[12px] text-muted">{tried.size}/6 dicoba</span>
-        </div>
-        <div className="grid grid-cols-3 lg:grid-cols-6 gap-[9px]">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
           {PASSPORT.map(p => {
-            const isLocked = !tried.has(p.n);
+            const isUnlocked = tried.has(p.n);
             return (
-              <div key={p.n} className={`bg-card border rounded-[12px] p-[12px_8px] text-center ${isLocked ? 'border-dashed border-line opacity-38' : 'border-line'}`}>
-                <span className="text-[20px] block">{p.e}</span>
-                <b className="text-[11px] font-semibold block mt-[6px] tracking-[-.01em]">{p.n}</b>
+              <div 
+                key={p.n} 
+                className={`rounded-[14px] p-3 text-center flex flex-col items-center gap-1 transition-all ${
+                  isUnlocked 
+                    ? 'bg-[#faf6ee] border-1.5 border-[#cba258] shadow-[0_2px_8px_rgba(203,162,88,0.15)]' 
+                    : 'bg-[#edebe9] border-1.5 border-dashed border-[#d6dbde] opacity-60'
+                }`}
+              >
+                <span className="text-[26px] leading-none">{p.e}</span>
+                <span className="text-[12px] font-bold text-[rgba(0,0,0,0.87)] truncate max-w-full mt-1">
+                  {p.n}
+                </span>
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isUnlocked ? 'text-[#cba258]' : 'text-[rgba(0,0,0,0.58)]'}`}>
+                  {isUnlocked ? 'Terbuka ★' : 'Terkunci'}
+                </span>
               </div>
             );
           })}
         </div>
+      </div>
 
-        <div className="flex items-center justify-between m-[20px_2px_10px]">
-          <h3 className="text-[15px] font-bold tracking-[-.015em]">Jadwal kosongmu</h3>
-          <span className="text-[12px] text-muted">dari jadwal kuliah</span>
+      {/* myITS Sync Table */}
+      <div>
+        <div className="flex items-baseline justify-between gap-3 mb-3">
+          <h2 className="text-[16px] sm:text-[18px] font-bold text-[#006241] tracking-[-0.01em]">
+            Celah Jadwal Kuliah (Tersinkron myITS)
+          </h2>
+          <span className="text-[11.5px] font-bold text-[#00754A] uppercase tracking-wider">
+            Tersinkron Otomatis
+          </span>
         </div>
-        <div className="bg-card border border-line rounded-radius p-[13px] mb-[12px]">
-          <div className="flex justify-between items-center text-[13.5px] py-[7px] gap-[12px]">
-            <span className="text-muted">Selasa</span><b className="font-bold text-right">15.00 – 17.00</b>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between items-center p-3 sm:p-3.5 bg-[#edebe9] rounded-[8px] text-[13.5px] flex-wrap gap-1.5">
+            <span className="font-semibold text-[rgba(0,0,0,0.87)]">Selasa Sore</span>
+            <b className="text-[#00754A]">15.00 – 17.00 (Rekomendasi Utama)</b>
           </div>
-          <div className="flex justify-between items-center text-[13.5px] py-[7px] gap-[12px] border-t border-line">
-            <span className="text-muted">Rabu</span><b className="font-bold text-right">16.00 – 18.00</b>
+          <div className="flex justify-between items-center p-3 sm:p-3.5 bg-[#edebe9] rounded-[8px] text-[13.5px] flex-wrap gap-1.5">
+            <span className="font-semibold text-[rgba(0,0,0,0.87)]">Rabu Sore</span>
+            <span className="text-[rgba(0,0,0,0.87)] font-medium">16.00 – 18.00</span>
           </div>
-          <div className="flex justify-between items-center text-[13.5px] py-[7px] gap-[12px] border-t border-line">
-            <span className="text-muted">Jumat</span><b className="font-bold text-right">13.00 – 17.00</b>
-          </div>
-          <div className="flex justify-between items-center text-[13.5px] py-[7px] gap-[12px] border-t border-line">
-            <span className="text-muted">Sabtu</span><b className="font-bold text-right">Seharian</b>
+          <div className="flex justify-between items-center p-3 sm:p-3.5 bg-[#edebe9] rounded-[8px] text-[13.5px] flex-wrap gap-1.5">
+            <span className="font-semibold text-[rgba(0,0,0,0.87)]">Jumat Siang</span>
+            <span className="text-[rgba(0,0,0,0.87)] font-medium">13.00 – 17.00</span>
           </div>
         </div>
       </div>
-    </>
+
+    </div>
   );
 }
