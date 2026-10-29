@@ -37,3 +37,12 @@ export interface Booking {
   total: number;
   code: string;
 }
+
+export interface UserSchedule {
+  id: string;
+  user_id?: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  is_free_time?: boolean;
+}
