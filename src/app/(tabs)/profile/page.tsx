@@ -2,7 +2,7 @@
 import { useAppStore, PASSPORT } from '@/lib/store';
 
 export default function ProfilePage() {
-  const { state, logout } = useAppStore();
+  const { state, openSheet, logout } = useAppStore();
   
   const tried = new Set(state.tried);
   state.sessions.forEach(s => {
@@ -97,31 +97,47 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* myITS Sync Table */}
+      {/* Dynamic Celah Jadwal Kuliah Section */}
       <div>
         <div className="flex items-baseline justify-between gap-3 mb-3">
           <h2 className="text-[16px] sm:text-[18px] font-bold text-[#006241] tracking-[-0.01em]">
-            Celah Jadwal Kuliah (Tersinkron myITS)
+            Celah Jadwal Luang ({state.schedules.length})
           </h2>
-          <span className="text-[11.5px] font-bold text-[#00754A] uppercase tracking-wider">
-            Tersinkron Otomatis
-          </span>
+          <button
+            onClick={() => openSheet('schedule')}
+            className="text-[12px] font-bold text-[#00754A] hover:underline bg-transparent border-0 cursor-pointer"
+          >
+            + Kelola Jadwal
+          </button>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between items-center p-3 sm:p-3.5 bg-[#edebe9] rounded-[8px] text-[13.5px] flex-wrap gap-1.5">
-            <span className="font-semibold text-[rgba(0,0,0,0.87)]">Selasa Sore</span>
-            <b className="text-[#00754A]">15.00 – 17.00 (Rekomendasi Utama)</b>
+        {state.schedules.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {state.schedules.map((sch, i) => (
+              <div 
+                key={sch.id || i}
+                className="flex justify-between items-center p-3 sm:p-3.5 bg-[#edebe9] rounded-[8px] text-[13.5px] flex-wrap gap-1.5 border border-[#d6dbde]/60"
+              >
+                <span className="font-semibold text-[rgba(0,0,0,0.87)]">
+                  {sch.day_of_week}
+                </span>
+                <b className={i === 0 ? "text-[#00754A]" : "text-[rgba(0,0,0,0.87)] font-medium"}>
+                  {sch.start_time} – {sch.end_time} {i === 0 ? '(Rekomendasi Utama)' : ''}
+                </b>
+              </div>
+            ))}
           </div>
-          <div className="flex justify-between items-center p-3 sm:p-3.5 bg-[#edebe9] rounded-[8px] text-[13.5px] flex-wrap gap-1.5">
-            <span className="font-semibold text-[rgba(0,0,0,0.87)]">Rabu Sore</span>
-            <span className="text-[rgba(0,0,0,0.87)] font-medium">16.00 – 18.00</span>
+        ) : (
+          <div className="p-4 bg-[#edebe9] rounded-[8px] text-center text-[13px] text-[rgba(0,0,0,0.58)] flex flex-col items-center gap-2">
+            <span>Belum ada jadwal luang yang diatur.</span>
+            <button
+              onClick={() => openSheet('schedule')}
+              className="px-4 py-1.5 rounded-full bg-[#00754A] text-white text-[12px] font-semibold cursor-pointer"
+            >
+              + Tambah Jadwal Luang
+            </button>
           </div>
-          <div className="flex justify-between items-center p-3 sm:p-3.5 bg-[#edebe9] rounded-[8px] text-[13.5px] flex-wrap gap-1.5">
-            <span className="font-semibold text-[rgba(0,0,0,0.87)]">Jumat Siang</span>
-            <span className="text-[rgba(0,0,0,0.87)] font-medium">13.00 – 17.00</span>
-          </div>
-        </div>
+        )}
       </div>
 
     </div>

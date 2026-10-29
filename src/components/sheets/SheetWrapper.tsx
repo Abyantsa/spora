@@ -3,6 +3,7 @@ import { useAppStore } from '@/lib/store';
 import DetailSheet from './DetailSheet';
 import CreateSheet from './CreateSheet';
 import BookSheet from './BookSheet';
+import ScheduleSheet from './ScheduleSheet';
 
 export default function SheetWrapper() {
   const { state, closeSheet } = useAppStore();
@@ -20,6 +21,7 @@ export default function SheetWrapper() {
         {state.sheet.mode === 'detail' && <DetailSheet id={state.sheet.id!} />}
         {state.sheet.mode === 'create' && <CreateSheet />}
         {state.sheet.mode === 'book' && <BookSheet id={state.sheet.id!} />}
+        {state.sheet.mode === 'schedule' && <ScheduleSheet />}
       </div>
     </div>
   );

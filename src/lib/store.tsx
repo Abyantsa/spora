@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Venue, Session, Booking } from '@/types';
+import { Venue, Session, Booking, UserSchedule } from '@/types';
 import { supabase } from './supabase';
 import { User } from '@supabase/supabase-js';
 import { useRouter, usePathname } from 'next/navigation';
@@ -25,6 +25,12 @@ export const INITIAL_SESSIONS: Session[] = [
   { id:'s6', sport:'Padel', emoji:'🎾', venue:'Surabaya Padel Kertajaya', day:'Minggu', time:'08.00 – 09.30', price:45000, min:4, joined:2, level:'Menengah', dist:'3,4 km', free:false, host:'Yoga', fits:false },
 ];
 
+export const INITIAL_SCHEDULES: UserSchedule[] = [
+  { id: 'sch-1', day_of_week: 'Selasa', start_time: '15.00', end_time: '17.00', is_free_time: true },
+  { id: 'sch-2', day_of_week: 'Rabu', start_time: '16.00', end_time: '18.00', is_free_time: true },
+  { id: 'sch-3', day_of_week: 'Jumat', start_time: '13.00', end_time: '17.00', is_free_time: true },
+];
+
 export const PASSPORT = [
   {n:'Badminton',e:'🏸'},{n:'Futsal',e:'⚽'},{n:'Basket',e:'🏀'},
   {n:'Voli',e:'🏐'},{n:'Lari',e:'🏃'},{n:'Padel',e:'🎾'},
@@ -45,8 +51,9 @@ type AppState = {
   joined: Set<string>;
   tried: Set<string>;
   bookings: Booking[];
+  schedules: UserSchedule[];
   toastMsg: string | null;
-  sheet: { mode: 'detail' | 'create' | 'book' | null; id?: string };
+  sheet: { mode: 'detail' | 'create' | 'book' | 'schedule' | null; id?: string };
   isLoaded: boolean;
 };
 
@@ -57,7 +64,9 @@ type AppContextType = {
   showToast: (msg: string) => void;
   addSession: (s: Session) => void;
   addBooking: (b: Booking) => void;
-  openSheet: (mode: 'detail'|'create'|'book', id?: string) => void;
+  addScheduleSlot: (slot: Omit<UserSchedule, 'id'>) => Promise<void>;
+  deleteScheduleSlot: (id: string) => Promise<void>;
+  openSheet: (mode: 'detail' | 'create' | 'book' | 'schedule', id?: string) => void;
   closeSheet: () => void;
   logout: () => Promise<void>;
 };
@@ -70,11 +79,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [state, setState] = useState<AppState>({
     user: null,
-    sessions: INITIAL_SESSIONS, // Default dummy data
-    venues: INITIAL_VENUES, // Default dummy data
+    sessions: INITIAL_SESSIONS,
+    venues: INITIAL_VENUES,
     joined: new Set(),
     tried: new Set(['Badminton', 'Futsal']),
     bookings: [],
+    schedules: INITIAL_SCHEDULES,
     toastMsg: null,
     sheet: { mode: null },
     isLoaded: false,
@@ -109,6 +119,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           const { data: membersData } = await supabase.from('session_members').select('session_id').eq('user_id', session.user.id);
           if (membersData) {
             setState(s => ({ ...s, joined: new Set(membersData.map(m => m.session_id)) }));
+          }
+
+          // Fetch user schedules from Supabase
+          const { data: schedulesData } = await supabase.from('user_schedules').select('*').eq('user_id', session.user.id);
+          if (schedulesData && schedulesData.length > 0) {
+            setState(s => ({ ...s, schedules: schedulesData }));
           }
 
           // Redirect if on login page
@@ -181,7 +197,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }
       setTimeout(() => showToast(msg), 50);
 
-      // Async Update to DB (non-blocking)
       if (prev.user && process.env.NEXT_PUBLIC_SUPABASE_URL) {
         if (isLeaving) {
           supabase.from('session_members').delete().match({ session_id: id, user_id: prev.user.id }).then();
@@ -197,7 +212,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const addSession = async (s: Session) => {
     setState(p => ({ ...p, sessions: [s, ...p.sessions], joined: new Set(p.joined).add(s.id) }));
     
-    // Sync to DB
     if (state.user && process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const { data, error } = await supabase.from('sessions').insert({
         sport: s.sport, emoji: s.emoji, venue: s.venue, day: s.day, time: s.time,
@@ -206,7 +220,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }).select().single();
       
       if (data) {
-        // Also add the host to session_members
         await supabase.from('session_members').insert({ session_id: data.id, user_id: state.user.id });
       } else if (error) {
         showToast('Gagal menyimpan sesi ke database.');
@@ -226,11 +239,53 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const openSheet = (mode: 'detail'|'create'|'book', id?: string) => setState(p => ({ ...p, sheet: { mode, id } }));
+  const addScheduleSlot = async (slot: Omit<UserSchedule, 'id'>) => {
+    const tempId = 'sch-' + Date.now();
+    const newSlot: UserSchedule = { id: tempId, ...slot };
+    setState(prev => ({ ...prev, schedules: [...prev.schedules, newSlot] }));
+    showToast(`Jadwal luang ${slot.day_of_week} (${slot.start_time}–${slot.end_time}) ditambahkan.`);
+
+    if (state.user && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      const { data, error } = await supabase.from('user_schedules').insert({
+        user_id: state.user.id,
+        day_of_week: slot.day_of_week,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        is_free_time: true
+      }).select().single();
+
+      if (data) {
+        setState(prev => ({
+          ...prev,
+          schedules: prev.schedules.map(item => item.id === tempId ? data : item)
+        }));
+      } else if (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  const deleteScheduleSlot = async (id: string) => {
+    setState(prev => ({
+      ...prev,
+      schedules: prev.schedules.filter(item => item.id !== id)
+    }));
+    showToast('Slot jadwal luang dihapus.');
+
+    if (state.user && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      await supabase.from('user_schedules').delete().eq('id', id);
+    }
+  };
+
+  const openSheet = (mode: 'detail' | 'create' | 'book' | 'schedule', id?: string) => 
+    setState(p => ({ ...p, sheet: { mode, id } }));
   const closeSheet = () => setState(p => ({ ...p, sheet: { mode: null } }));
 
   return (
-    <AppContext.Provider value={{ state, setState, toggleJoin, showToast, addSession, addBooking, openSheet, closeSheet, logout }}>
+    <AppContext.Provider value={{ 
+      state, setState, toggleJoin, showToast, addSession, addBooking, 
+      addScheduleSlot, deleteScheduleSlot, openSheet, closeSheet, logout 
+    }}>
       {state.isLoaded ? children : <div className="min-h-screen flex items-center justify-center bg-paper font-bold text-court">Loading SPORA...</div>}
     </AppContext.Provider>
   );
