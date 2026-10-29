@@ -1,9 +1,11 @@
 'use client';
 import { useAppStore } from '@/lib/store';
 import { rp } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 export default function DetailSheet({ id }: { id: string }) {
-  const { state, closeSheet, toggleJoin } = useAppStore();
+  const { state, closeSheet, toggleJoin, startQrisPayment } = useAppStore();
+  const router = useRouter();
   const s = state.sessions.find(x => x.id === id);
   
   if (!s) return null;
@@ -14,6 +16,19 @@ export default function DetailSheet({ id }: { id: string }) {
   const pct = Math.min(100, Math.round((c / s.min) * 100));
   const isFull = c >= s.min;
   const perHead = s.price === 0 ? 0 : Math.round(s.price * s.min / Math.max(c, 1) / 500) * 500;
+
+  const handleJoin = () => {
+    if (s.free) {
+      toggleJoin(s.id);
+    } else {
+      startQrisPayment(s.id, perHead, `${s.sport} - ${s.venue}`);
+    }
+  };
+
+  const openSessionChat = () => {
+    closeSheet();
+    router.push(`/chat?session=${s.id}`);
+  };
 
   const pills = [];
   for(let i=0; i<s.min; i++) {
@@ -101,38 +116,40 @@ export default function DetailSheet({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* Action Button */}
-        {isHost ? (
-          <div>
-            <button disabled className="w-full py-3 rounded-full border border-[#d6dbde] text-[rgba(0,0,0,0.58)] bg-transparent text-[14px] font-semibold cursor-not-allowed">
-              Kamu adalah Host Sesi Ini
-            </button>
-            <p className="text-[11.5px] text-[rgba(0,0,0,0.58)] text-center mt-2">
-              Sesi ini terbuka untuk pemain sekitar ITS. Notifikasi otomatis dikirim saat kuorum penuh.
-            </p>
-          </div>
-        ) : mine ? (
-          <div>
-            <button 
-              onClick={() => toggleJoin(s.id)}
-              className="w-full py-3 rounded-full border border-red-500 text-red-600 hover:bg-red-50 text-[14px] font-semibold transition-all cursor-pointer active:scale-95"
+        {/* Action Buttons */}
+        {mine || isHost ? (
+          <div className="flex flex-col gap-2.5">
+            <button
+              onClick={openSessionChat}
+              className="w-full py-3.5 rounded-full bg-[#00754A] hover:bg-[#005c3b] text-white text-[15px] font-bold shadow-[0_2px_8px_rgba(0,117,74,0.25)] transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95"
             >
-              Batalkan Ikut Sesi (Keluar)
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span>💬 Masuk Chat Koordinasi Sesi</span>
             </button>
-            <p className="text-[11.5px] text-[rgba(0,0,0,0.58)] text-center mt-2">
-              Pembatalan sebelum kuorum tercapai tidak dikenakan penalti fairplay.
-            </p>
+
+            {!isHost && (
+              <button 
+                onClick={() => toggleJoin(s.id)}
+                className="w-full py-2.5 rounded-full border border-red-500 text-red-600 hover:bg-red-50 text-[13.5px] font-semibold transition-all cursor-pointer active:scale-95"
+              >
+                Keluar dari Sesi (Refund Escrow 100%)
+              </button>
+            )}
           </div>
         ) : (
           <div>
             <button 
-              onClick={() => toggleJoin(s.id)}
+              onClick={handleJoin}
               className="w-full py-3.5 rounded-full bg-[#00754A] hover:bg-[#005c3b] text-white text-[15px] font-bold shadow-[0_2px_8px_rgba(0,117,74,0.25)] transition-all cursor-pointer active:scale-95"
             >
-              {s.free ? 'Gabung Sesi Sekarang (Gratis)' : `Gabung & Patungan ${rp(perHead)}`}
+              {s.free ? 'Gabung Sesi Sekarang (Gratis)' : `Gabung & Patungan ${rp(perHead)} (QRIS Escrow)`}
             </button>
             <p className="text-[11.5px] text-[rgba(0,0,0,0.58)] text-center mt-2">
-              {s.free ? 'Fasilitas kampus bebas biaya. Cukup hadir dengan perlengkapan pribadi.' : 'Patungan aman dengan garansi 100% refund bila kuorum tidak terpenuhi.'}
+              {s.free 
+                ? 'Fasilitas kampus bebas biaya. Cukup hadir dengan perlengkapan pribadi.' 
+                : '🛡️ Proteksi Escrow: Dana ditahan aman dan otomatis 100% refund bila kuorum kurang.'}
             </p>
           </div>
         )}

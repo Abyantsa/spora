@@ -67,8 +67,16 @@ export default function BookSheet({ id }: { id: string }) {
         <h3 className="text-[20px] sm:text-[22px] font-bold text-[#006241] pr-9 leading-tight">
           {v.e} {v.n}
         </h3>
-        <p className="text-[12.5px] text-[rgba(0,0,0,0.58)] mt-1 leading-normal">
-          {v.sports} · {v.dist} · Dikelola oleh {v.owner}
+        <p className="text-[12.5px] text-[rgba(0,0,0,0.58)] mt-1 leading-normal flex items-center justify-between flex-wrap gap-2">
+          <span>{v.sports} · {v.dist} · Dikelola oleh {v.owner}</span>
+          <a 
+            href={v.maps_url || `https://maps.google.com/?q=${encodeURIComponent(v.n + ' Surabaya')}`}
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[#00754A] font-semibold hover:underline inline-flex items-center gap-1 text-[12px]"
+          >
+            📍 Buka Google Maps ↗
+          </a>
         </p>
       </div>
 
@@ -190,8 +198,8 @@ export default function BookSheet({ id }: { id: string }) {
         </button>
         <p className="text-[11.5px] text-[rgba(0,0,0,0.58)] text-center -mt-2">
           {total === 0 
-            ? 'Fasilitas kampus dicatat untuk pencegahan tabrakan jadwal.' 
-            : 'Pembatalan gratis hingga 12 jam sebelum mulai. Kode booking resmi seketika diterbitkan.'}
+            ? 'Fasilitas kampus dicatat untuk pencegahan tabrakan jadwal antar tim mahasiswa.' 
+            : 'Jadwal dicatat di SPORA. Konfirmasi atau pembayaran resmi ke pengelola lapangan dikoordinasikan mandiri oleh Host.'}
         </p>
 
       </div>
